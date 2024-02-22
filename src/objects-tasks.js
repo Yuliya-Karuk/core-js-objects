@@ -365,70 +365,51 @@ const cssSelectorBuilder = {
       );
   },
 
-  element(value) {
-    if (!this.hasElement) {
-      this.checkOrder(1);
-      const newObj = Object.create(this);
-      newObj.resultStr += value;
-      newObj.hasElement = true;
-      newObj.order = 1;
-      return newObj;
+  addOneElement(elementName, value, order) {
+    if (
+      (elementName === 'element' && this.hasElement) ||
+      (elementName === 'id' && this.hasId) ||
+      (elementName === 'pseudoElement' && this.hasPseudoElement)
+    ) {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
     }
-    throw new Error(
-      'Element, id and pseudo-element should not occur more then one time inside the selector'
-    );
+    this.checkOrder(order);
+    const newObj = Object.create(this);
+    newObj.resultStr += value;
+    newObj.order = order;
+    return newObj;
+  },
+
+  element(value) {
+    const newObj = this.addOneElement('element', value, 1);
+    newObj.hasElement = true;
+    return newObj;
   },
 
   id(value) {
-    if (!this.hasId) {
-      this.checkOrder(2);
-      const newObj = Object.create(this);
-      newObj.resultStr += `#${value}`;
-      newObj.hasId = true;
-      newObj.order = 2;
-      return newObj;
-    }
-    throw new Error(
-      'Element, id and pseudo-element should not occur more then one time inside the selector'
-    );
+    const newObj = this.addOneElement('id', `#${value}`, 2);
+    newObj.hasId = true;
+    return newObj;
   },
 
   class(value) {
-    this.checkOrder(3);
-    const newObj = Object.create(this);
-    newObj.resultStr += `.${value}`;
-    newObj.order = 3;
-    return newObj;
+    return this.addOneElement('class', `.${value}`, 3);
   },
 
   attr(value) {
-    this.checkOrder(4);
-    const newObj = Object.create(this);
-    newObj.resultStr += `[${value}]`;
-    newObj.order = 4;
-    return newObj;
+    return this.addOneElement('attr', `[${value}]`, 4);
   },
 
   pseudoClass(value) {
-    this.checkOrder(5);
-    const newObj = Object.create(this);
-    newObj.resultStr += `:${value}`;
-    newObj.order = 5;
-    return newObj;
+    return this.addOneElement('pseudoClass', `:${value}`, 5);
   },
 
   pseudoElement(value) {
-    this.checkOrder(6);
-    if (!this.hasPseudoElement) {
-      const newObj = Object.create(this);
-      newObj.resultStr += `::${value}`;
-      newObj.hasPseudoElement = true;
-      newObj.order = 6;
-      return newObj;
-    }
-    throw new Error(
-      'Element, id and pseudo-element should not occur more then one time inside the selector'
-    );
+    const newObj = this.addOneElement('pseudoElement', `::${value}`, 6);
+    newObj.hasPseudoElement = true;
+    return newObj;
   },
 
   combine(selector1, combinator, selector2) {
