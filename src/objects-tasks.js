@@ -154,8 +154,18 @@ function makeWord(lettersObject) {
  *    sellTickets([25, 25, 50]) => true
  *    sellTickets([25, 100]) => false (The seller does not have enough money to give change.)
  */
-function sellTickets(/* queue */) {
-  throw new Error('Not implemented');
+function sellTickets(queue) {
+  const price = 25;
+  let bank = 0;
+  for (let i = 0; i < queue.length; i += 1) {
+    if (queue[i] === price) {
+      bank += queue[i];
+    } else {
+      bank -= queue[i] - price;
+    }
+    if (bank < 0) return false;
+  }
+  return true;
 }
 
 /**
@@ -204,8 +214,9 @@ function getJSON(obj) {
  *    const r = fromJSON(Circle.prototype, '{"radius":10}');
  *
  */
-function fromJSON(/* proto, json */) {
-  throw new Error('Not implemented');
+function fromJSON(proto, json) {
+  const obj = JSON.parse(json);
+  return Object.assign(Object.create(proto), obj);
 }
 
 /**
@@ -341,32 +352,96 @@ function group(array, keySelector, valueSelector) {
  */
 
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  resultStr: '',
+  hasElement: false,
+  hasId: false,
+  hasPseudoElement: false,
+  order: 0,
+
+  checkOrder(newOrder) {
+    if (newOrder < this.order)
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    if (!this.hasElement) {
+      this.checkOrder(1);
+      const newObj = Object.create(this);
+      newObj.resultStr += value;
+      newObj.hasElement = true;
+      newObj.order = 1;
+      return newObj;
+    }
+    throw new Error(
+      'Element, id and pseudo-element should not occur more then one time inside the selector'
+    );
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    if (!this.hasId) {
+      this.checkOrder(2);
+      const newObj = Object.create(this);
+      newObj.resultStr += `#${value}`;
+      newObj.hasId = true;
+      newObj.order = 2;
+      return newObj;
+    }
+    throw new Error(
+      'Element, id and pseudo-element should not occur more then one time inside the selector'
+    );
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    this.checkOrder(3);
+    const newObj = Object.create(this);
+    newObj.resultStr += `.${value}`;
+    newObj.order = 3;
+    return newObj;
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    this.checkOrder(4);
+    const newObj = Object.create(this);
+    newObj.resultStr += `[${value}]`;
+    newObj.order = 4;
+    return newObj;
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    this.checkOrder(5);
+    const newObj = Object.create(this);
+    newObj.resultStr += `:${value}`;
+    newObj.order = 5;
+    return newObj;
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    this.checkOrder(6);
+    if (!this.hasPseudoElement) {
+      const newObj = Object.create(this);
+      newObj.resultStr += `::${value}`;
+      newObj.hasPseudoElement = true;
+      newObj.order = 6;
+      return newObj;
+    }
+    throw new Error(
+      'Element, id and pseudo-element should not occur more then one time inside the selector'
+    );
+  },
+
+  combine(selector1, combinator, selector2) {
+    const first = selector1.stringify();
+    const sec = selector2.stringify();
+    this.resultStr = `${first} ${combinator} ${sec}`;
+    return this;
+  },
+
+  stringify() {
+    const result = this.resultStr;
+    this.resultStr = '';
+    return result;
   },
 };
 
